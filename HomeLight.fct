@@ -1,0 +1,4 @@
+main DSTACK_USAGE:54 DSTACK_LEVEL:54 FILE:"HomeLight.c" LINE:51
+sprintf DSTACK_USAGE:14 DSTACK_LEVEL:68 FILE:"C:\cvavr2\lib\stdio.lib" LINE:1410
+_print DSTACK_USAGE:20 DSTACK_LEVEL:88 FILE:"C:\cvavr2\lib\stdio.lib" LINE:503
+strlen DSTACK_USAGE:2 DSTACK_LEVEL:90 FILE:"C:\cvavr2\lib\string.lib" LINE:1706

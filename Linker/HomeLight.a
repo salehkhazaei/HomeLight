@@ -1,0 +1,1046 @@
+;/*****************************************************
+;This program was produced by the
+;CodeWizardAVR V2.05.3 Standard
+;Automatic Program Generator
+;© Copyright 1998-2011 Pavel Haiduc, HP InfoTech s.r.l.
+;http://www.hpinfotech.com
+;
+;Project :
+;Version :
+;Date    : 2/12/2015
+;Author  : Saleh
+;Company : GRCG
+;Comments:
+;
+;
+;Chip type               : ATmega8
+;Program type            : Application
+;AVR Core Clock frequency: 8.000000 MHz
+;Memory model            : Small
+;External RAM size       : 0
+;Data Stack size         : 256
+;*****************************************************/
+;
+;#include <mega8.h>
+;PCODE: $00000000 VOL: 0
+	#ifndef __SLEEP_DEFINED__
+;PCODE: $00000001 VOL: 0
+	#define __SLEEP_DEFINED__
+;PCODE: $00000002 VOL: 0
+	.EQU __se_bit=0x80
+;PCODE: $00000003 VOL: 0
+	.EQU __sm_mask=0x70
+;PCODE: $00000004 VOL: 0
+	.EQU __sm_powerdown=0x20
+;PCODE: $00000005 VOL: 0
+	.EQU __sm_powersave=0x30
+;PCODE: $00000006 VOL: 0
+	.EQU __sm_standby=0x60
+;PCODE: $00000007 VOL: 0
+	.EQU __sm_ext_standby=0x70
+;PCODE: $00000008 VOL: 0
+	.EQU __sm_adc_noise_red=0x10
+;PCODE: $00000009 VOL: 0
+	.SET power_ctrl_reg=mcucr
+;PCODE: $0000000A VOL: 0
+	#endif
+;PCODE: $0000000B VOL: 0
+;PCODE: $0000000C VOL: 0
+;
+;#include <delay.h>
+;#include <stdio.h>
+;
+;// Alphanumeric LCD functions
+;#include <alcd.h>
+;
+;#define ADC_VREF_TYPE 0xE0
+;
+;// Read the 8 most significant bits
+;// of the AD conversion result
+;unsigned char read_adc(unsigned char adc_input)
+; 0000 0025 {
+
+	.CSEG
+;PCODE: $0000000D VOL: 0
+;PCODE: $0000000E VOL: 0
+; 0000 0026 	ADMUX=adc_input | (ADC_VREF_TYPE & 0xff);
+;PCODE: $0000000F VOL: 0
+;	adc_input -> Y+0
+;PCODE: $00000010 VOL: 0
+;PCODE: $00000011 VOL: 0
+;PCODE: $00000012 VOL: 0
+; 0000 0027 	// Delay needed for the stabilization of the ADC input voltage
+; 0000 0028 	delay_us(10);
+;PCODE: $00000013 VOL: 0
+; 0000 0029 	// Start the AD conversion
+; 0000 002A 	ADCSRA|=0x40;
+;PCODE: $00000014 VOL: 0
+;PCODE: $00000015 VOL: 0
+; 0000 002B 	// Wait for the AD conversion to complete
+; 0000 002C 	while ((ADCSRA & 0x10)==0);
+;PCODE: $00000016 VOL: 0
+;PCODE: $00000017 VOL: 0
+;PCODE: $00000018 VOL: 0
+;PCODE: $00000019 VOL: 0
+;PCODE: $0000001A VOL: 0
+;PCODE: $0000001B VOL: 0
+; 0000 002D 	ADCSRA|=0x10;
+;PCODE: $0000001C VOL: 0
+;PCODE: $0000001D VOL: 0
+; 0000 002E 	return ADCH;
+;PCODE: $0000001E VOL: 0
+;PCODE: $0000001F VOL: 0
+;PCODE: $00000020 VOL: 0
+; 0000 002F }
+;PCODE: $00000021 VOL: 0
+;
+;// Declare your global variables here
+;
+;void main(void)
+; 0000 0034 {
+;PCODE: $00000022 VOL: 0
+; 0000 0035 	// Declare your local variables here
+; 0000 0036 	/*
+; 0000 0037 		Menu:
+; 0000 0038 		0:
+; 0000 0039 			VAL:#### ####
+; 0000 003A 			STATE:ON/OFF
+; 0000 003B 		1:
+; 0000 003C 			SET ON VAL
+; 0000 003D 		2:
+; 0000 003E 			SET OFF VAL
+; 0000 003F 		3:
+; 0000 0040 			SET TIMER
+; 0000 0041 		4:
+; 0000 0042 			?
+; 0000 0043 	*/
+; 0000 0044 	char buffer[32];
+; 0000 0045 
+; 0000 0046 	int menu_state = 0;
+; 0000 0047 	int state = 0; // current state 0-off 1-on
+; 0000 0048 	int value = 0; // current value
+; 0000 0049 
+; 0000 004A 	int timer = 0; // counter to change value
+; 0000 004B 	int timer_max = 1000; // counter to change value
+; 0000 004C 	int on_value = 200; // value to on
+; 0000 004D 	int off_value = 50; // value to off
+; 0000 004E 
+; 0000 004F 	int btn_next = 0; // is btn next pressed
+; 0000 0050 	int btn_prev = 0; // is btn prev pressed
+; 0000 0051 	int btn_set = 0; // is btn set pressed
+; 0000 0052 
+; 0000 0053 	int tmp_val = 0; // temporary value
+; 0000 0054 	int tmp_state = 0; // temporary state
+; 0000 0055 	int i = 0;
+; 0000 0056 
+; 0000 0057 	int lcd_timer = 500;
+; 0000 0058 	// Input/Output Ports initialization
+; 0000 0059 	// Port B initialization
+; 0000 005A 	// Func7=In Func6=Out Func5=Out Func4=In Func3=In Func2=In Func1=In Func0=In
+; 0000 005B 	// State7=T State6=0 State5=0 State4=T State3=P State2=P State1=P State0=T
+; 0000 005C 	PORTB=0x0E;
+;PCODE: $00000023 VOL: 0
+;PCODE: $00000024 VOL: 0
+;PCODE: $00000025 VOL: 0
+;PCODE: $00000026 VOL: 0
+;PCODE: $00000027 VOL: 0
+;	buffer -> Y+22
+;	menu_state -> R16,R17
+;	state -> R18,R19
+;	value -> R20,R21
+;	timer -> Y+20
+;	timer_max -> Y+18
+;	on_value -> Y+16
+;	off_value -> Y+14
+;	btn_next -> Y+12
+;	btn_prev -> Y+10
+;	btn_set -> Y+8
+;	tmp_val -> Y+6
+;	tmp_state -> Y+4
+;	i -> Y+2
+;	lcd_timer -> Y+0
+;PCODE: $00000028 VOL: 0
+;PCODE: $00000029 VOL: 0
+;PCODE: $0000002A VOL: 0
+;PCODE: $0000002B VOL: 0
+;PCODE: $0000002C VOL: 0
+;PCODE: $0000002D VOL: 0
+;PCODE: $0000002E VOL: 0
+;PCODE: $0000002F VOL: 0
+; 0000 005D 	DDRB=0x60;
+;PCODE: $00000030 VOL: 0
+;PCODE: $00000031 VOL: 0
+; 0000 005E 
+; 0000 005F 	// Port C initialization
+; 0000 0060 	// Func6=In Func5=In Func4=In Func3=In Func2=In Func1=In Func0=In
+; 0000 0061 	// State6=T State5=T State4=T State3=T State2=T State1=T State0=T
+; 0000 0062 	PORTC=0x00;
+;PCODE: $00000032 VOL: 0
+;PCODE: $00000033 VOL: 0
+; 0000 0063 	DDRC=0x00;
+;PCODE: $00000034 VOL: 0
+;PCODE: $00000035 VOL: 0
+; 0000 0064 
+; 0000 0065 	// Port D initialization
+; 0000 0066 	// Func7=In Func6=In Func5=In Func4=In Func3=In Func2=In Func1=In Func0=In
+; 0000 0067 	// State7=T State6=T State5=T State4=T State3=T State2=T State1=T State0=T
+; 0000 0068 	PORTD=0x00;
+;PCODE: $00000036 VOL: 0
+;PCODE: $00000037 VOL: 0
+; 0000 0069 	DDRD=0x00;
+;PCODE: $00000038 VOL: 0
+;PCODE: $00000039 VOL: 0
+; 0000 006A 
+; 0000 006B 	// Timer/Counter 0 initialization
+; 0000 006C 	// Clock source: System Clock
+; 0000 006D 	// Clock value: Timer 0 Stopped
+; 0000 006E 	TCCR0=0x00;
+;PCODE: $0000003A VOL: 0
+;PCODE: $0000003B VOL: 0
+; 0000 006F 	TCNT0=0x00;
+;PCODE: $0000003C VOL: 0
+;PCODE: $0000003D VOL: 0
+; 0000 0070 
+; 0000 0071 	// Timer/Counter 1 initialization
+; 0000 0072 	// Clock source: System Clock
+; 0000 0073 	// Clock value: Timer1 Stopped
+; 0000 0074 	// Mode: Normal top=0xFFFF
+; 0000 0075 	// OC1A output: Discon.
+; 0000 0076 	// OC1B output: Discon.
+; 0000 0077 	// Noise Canceler: Off
+; 0000 0078 	// Input Capture on Falling Edge
+; 0000 0079 	// Timer1 Overflow Interrupt: Off
+; 0000 007A 	// Input Capture Interrupt: Off
+; 0000 007B 	// Compare A Match Interrupt: Off
+; 0000 007C 	// Compare B Match Interrupt: Off
+; 0000 007D 	TCCR1A=0x00;
+;PCODE: $0000003E VOL: 0
+;PCODE: $0000003F VOL: 0
+; 0000 007E 	TCCR1B=0x00;
+;PCODE: $00000040 VOL: 0
+;PCODE: $00000041 VOL: 0
+; 0000 007F 	TCNT1H=0x00;
+;PCODE: $00000042 VOL: 0
+;PCODE: $00000043 VOL: 0
+; 0000 0080 	TCNT1L=0x00;
+;PCODE: $00000044 VOL: 0
+;PCODE: $00000045 VOL: 0
+; 0000 0081 	ICR1H=0x00;
+;PCODE: $00000046 VOL: 0
+;PCODE: $00000047 VOL: 0
+; 0000 0082 	ICR1L=0x00;
+;PCODE: $00000048 VOL: 0
+;PCODE: $00000049 VOL: 0
+; 0000 0083 	OCR1AH=0x00;
+;PCODE: $0000004A VOL: 0
+;PCODE: $0000004B VOL: 0
+; 0000 0084 	OCR1AL=0x00;
+;PCODE: $0000004C VOL: 0
+;PCODE: $0000004D VOL: 0
+; 0000 0085 	OCR1BH=0x00;
+;PCODE: $0000004E VOL: 0
+;PCODE: $0000004F VOL: 0
+; 0000 0086 	OCR1BL=0x00;
+;PCODE: $00000050 VOL: 0
+;PCODE: $00000051 VOL: 0
+; 0000 0087 
+; 0000 0088 	// Timer/Counter 2 initialization
+; 0000 0089 	// Clock source: System Clock
+; 0000 008A 	// Clock value: Timer2 Stopped
+; 0000 008B 	// Mode: Normal top=0xFF
+; 0000 008C 	// OC2 output: Disconnected
+; 0000 008D 	ASSR=0x00;
+;PCODE: $00000052 VOL: 0
+;PCODE: $00000053 VOL: 0
+; 0000 008E 	TCCR2=0x00;
+;PCODE: $00000054 VOL: 0
+;PCODE: $00000055 VOL: 0
+; 0000 008F 	TCNT2=0x00;
+;PCODE: $00000056 VOL: 0
+;PCODE: $00000057 VOL: 0
+; 0000 0090 	OCR2=0x00;
+;PCODE: $00000058 VOL: 0
+;PCODE: $00000059 VOL: 0
+; 0000 0091 
+; 0000 0092 	// External Interrupt(s) initialization
+; 0000 0093 	// INT0: Off
+; 0000 0094 	// INT1: Off
+; 0000 0095 	MCUCR=0x00;
+;PCODE: $0000005A VOL: 0
+;PCODE: $0000005B VOL: 0
+; 0000 0096 
+; 0000 0097 	// Timer(s)/Counter(s) Interrupt(s) initialization
+; 0000 0098 	TIMSK=0x00;
+;PCODE: $0000005C VOL: 0
+;PCODE: $0000005D VOL: 0
+; 0000 0099 
+; 0000 009A 	// USART initialization
+; 0000 009B 	// USART disabled
+; 0000 009C 	UCSRB=0x00;
+;PCODE: $0000005E VOL: 0
+;PCODE: $0000005F VOL: 0
+; 0000 009D 
+; 0000 009E 	// Analog Comparator initialization
+; 0000 009F 	// Analog Comparator: Off
+; 0000 00A0 	// Analog Comparator Input Capture by Timer/Counter 1: Off
+; 0000 00A1 	ACSR=0x80;
+;PCODE: $00000060 VOL: 0
+;PCODE: $00000061 VOL: 0
+; 0000 00A2 	SFIOR=0x00;
+;PCODE: $00000062 VOL: 0
+;PCODE: $00000063 VOL: 0
+; 0000 00A3 
+; 0000 00A4 	// ADC initialization
+; 0000 00A5 	// ADC Clock frequency: 62.500 kHz
+; 0000 00A6 	// ADC Voltage Reference: Int., cap. on AREF
+; 0000 00A7 	// Only the 8 most significant bits of
+; 0000 00A8 	// the AD conversion result are used
+; 0000 00A9 	ADMUX=ADC_VREF_TYPE & 0xff;
+;PCODE: $00000064 VOL: 0
+;PCODE: $00000065 VOL: 0
+; 0000 00AA 	ADCSRA=0x87;
+;PCODE: $00000066 VOL: 0
+;PCODE: $00000067 VOL: 0
+; 0000 00AB 
+; 0000 00AC 	// SPI initialization
+; 0000 00AD 	// SPI disabled
+; 0000 00AE 	SPCR=0x00;
+;PCODE: $00000068 VOL: 0
+;PCODE: $00000069 VOL: 0
+; 0000 00AF 
+; 0000 00B0 	// TWI initialization
+; 0000 00B1 	// TWI disabled
+; 0000 00B2 	TWCR=0x00;
+;PCODE: $0000006A VOL: 0
+;PCODE: $0000006B VOL: 0
+; 0000 00B3 
+; 0000 00B4 	// Alphanumeric LCD initialization
+; 0000 00B5 	// Connections are specified in the
+; 0000 00B6 	// Project|Configure|C Compiler|Libraries|Alphanumeric LCD menu:
+; 0000 00B7 	// RS - PORTD Bit 6
+; 0000 00B8 	// RD - PORTD Bit 5
+; 0000 00B9 	// EN - PORTD Bit 4
+; 0000 00BA 	// D4 - PORTD Bit 3
+; 0000 00BB 	// D5 - PORTD Bit 2
+; 0000 00BC 	// D6 - PORTD Bit 1
+; 0000 00BD 	// D7 - PORTD Bit 0
+; 0000 00BE 	// Characters/line: 8
+; 0000 00BF 	lcd_init(8);
+;PCODE: $0000006C VOL: 0
+;PCODE: $0000006D VOL: 0
+; 0000 00C0 
+; 0000 00C1 	for ( i = 0 ; i < 32 ; i ++ )
+;PCODE: $0000006E VOL: 0
+;PCODE: $0000006F VOL: 0
+;PCODE: $00000070 VOL: 0
+;PCODE: $00000071 VOL: 0
+;PCODE: $00000072 VOL: 0
+;PCODE: $00000073 VOL: 0
+;PCODE: $00000074 VOL: 0
+;PCODE: $00000075 VOL: 0
+;PCODE: $00000076 VOL: 0
+;PCODE: $00000077 VOL: 0
+; 0000 00C2 	{
+; 0000 00C3 		buffer[i] = ' ';
+;PCODE: $00000078 VOL: 0
+;PCODE: $00000079 VOL: 0
+;PCODE: $0000007A VOL: 0
+;PCODE: $0000007B VOL: 0
+;PCODE: $0000007C VOL: 0
+; 0000 00C4 	}
+;PCODE: $0000007D VOL: 0
+;PCODE: $0000007E VOL: 0
+;PCODE: $0000007F VOL: 0
+;PCODE: $00000080 VOL: 0
+;PCODE: $00000081 VOL: 0
+;PCODE: $00000082 VOL: 0
+; 0000 00C5 
+; 0000 00C6 	while (1)
+;PCODE: $00000083 VOL: 0
+; 0000 00C7 	{
+; 0000 00C8 		// set buffer for writing on screen
+; 0000 00C9 		switch ( menu_state )
+;PCODE: $00000084 VOL: 0
+; 0000 00CA 		{
+; 0000 00CB 			case 0:
+;PCODE: $00000085 VOL: 0
+;PCODE: $00000086 VOL: 0
+; 0000 00CC 				if ( state == 0 )
+;PCODE: $00000087 VOL: 0
+;PCODE: $00000088 VOL: 0
+; 0000 00CD 					sprintf ( buffer , "VAL: %d, %d\nSTATE: OFF" , value , timer );
+;PCODE: $00000089 VOL: 0
+;PCODE: $0000008A VOL: 0
+;PCODE: $0000008B VOL: 0
+;PCODE: $0000008C VOL: 0
+;PCODE: $0000008D VOL: 0
+;PCODE: $0000008E VOL: 0
+;PCODE: $0000008F VOL: 0
+;PCODE: $00000090 VOL: 0
+;PCODE: $00000091 VOL: 0
+;PCODE: $00000092 VOL: 0
+;PCODE: $00000093 VOL: 0
+;PCODE: $00000094 VOL: 0
+;PCODE: $00000095 VOL: 0
+;PCODE: $00000096 VOL: 0
+;PCODE: $00000097 VOL: 0
+; 0000 00CE 				else
+;PCODE: $00000098 VOL: 0
+;PCODE: $00000099 VOL: 0
+; 0000 00CF 					sprintf ( buffer , "VAL: %d, %d\nSTATE: ON" , value , timer );
+;PCODE: $0000009A VOL: 0
+;PCODE: $0000009B VOL: 0
+;PCODE: $0000009C VOL: 0
+;PCODE: $0000009D VOL: 0
+;PCODE: $0000009E VOL: 0
+;PCODE: $0000009F VOL: 0
+;PCODE: $000000A0 VOL: 0
+;PCODE: $000000A1 VOL: 0
+;PCODE: $000000A2 VOL: 0
+;PCODE: $000000A3 VOL: 0
+;PCODE: $000000A4 VOL: 0
+;PCODE: $000000A5 VOL: 0
+;PCODE: $000000A6 VOL: 0
+;PCODE: $000000A7 VOL: 0
+;PCODE: $000000A8 VOL: 0
+; 0000 00D0 				break;
+;PCODE: $000000A9 VOL: 0
+;PCODE: $000000AA VOL: 0
+; 0000 00D1 			case 1:
+;PCODE: $000000AB VOL: 0
+;PCODE: $000000AC VOL: 0
+;PCODE: $000000AD VOL: 0
+; 0000 00D2 				sprintf ( buffer , "SET ON VALUE    ");
+;PCODE: $000000AE VOL: 0
+;PCODE: $000000AF VOL: 0
+;PCODE: $000000B0 VOL: 0
+;PCODE: $000000B1 VOL: 0
+;PCODE: $000000B2 VOL: 0
+;PCODE: $000000B3 VOL: 0
+;PCODE: $000000B4 VOL: 0
+;PCODE: $000000B5 VOL: 0
+;PCODE: $000000B6 VOL: 0
+; 0000 00D3 				break;
+;PCODE: $000000B7 VOL: 0
+; 0000 00D4 			case 2:
+;PCODE: $000000B8 VOL: 0
+;PCODE: $000000B9 VOL: 0
+;PCODE: $000000BA VOL: 0
+; 0000 00D5 				sprintf ( buffer , "SET OFF VALUE   ");
+;PCODE: $000000BB VOL: 0
+;PCODE: $000000BC VOL: 0
+;PCODE: $000000BD VOL: 0
+;PCODE: $000000BE VOL: 0
+;PCODE: $000000BF VOL: 0
+;PCODE: $000000C0 VOL: 0
+;PCODE: $000000C1 VOL: 0
+;PCODE: $000000C2 VOL: 0
+;PCODE: $000000C3 VOL: 0
+; 0000 00D6 				break;
+;PCODE: $000000C4 VOL: 0
+; 0000 00D7 			case 3:
+;PCODE: $000000C5 VOL: 0
+;PCODE: $000000C6 VOL: 0
+;PCODE: $000000C7 VOL: 0
+; 0000 00D8 				sprintf ( buffer , "SET TIMER VALUE ");
+;PCODE: $000000C8 VOL: 0
+;PCODE: $000000C9 VOL: 0
+;PCODE: $000000CA VOL: 0
+;PCODE: $000000CB VOL: 0
+;PCODE: $000000CC VOL: 0
+;PCODE: $000000CD VOL: 0
+;PCODE: $000000CE VOL: 0
+;PCODE: $000000CF VOL: 0
+;PCODE: $000000D0 VOL: 0
+; 0000 00D9 				break;
+;PCODE: $000000D1 VOL: 0
+; 0000 00DA 			case 4:
+;PCODE: $000000D2 VOL: 0
+;PCODE: $000000D3 VOL: 0
+;PCODE: $000000D4 VOL: 0
+; 0000 00DB 				sprintf ( buffer , "%d            " , tmp_val );
+;PCODE: $000000D5 VOL: 0
+;PCODE: $000000D6 VOL: 0
+;PCODE: $000000D7 VOL: 0
+;PCODE: $000000D8 VOL: 0
+;PCODE: $000000D9 VOL: 0
+;PCODE: $000000DA VOL: 0
+;PCODE: $000000DB VOL: 0
+;PCODE: $000000DC VOL: 0
+;PCODE: $000000DD VOL: 0
+;PCODE: $000000DE VOL: 0
+;PCODE: $000000DF VOL: 0
+;PCODE: $000000E0 VOL: 0
+; 0000 00DC 				break;
+;PCODE: $000000E1 VOL: 0
+; 0000 00DD 		}
+;PCODE: $000000E2 VOL: 0
+; 0000 00DE         lcd_clear();
+;PCODE: $000000E3 VOL: 0
+; 0000 00DF 		lcd_puts ( buffer );
+;PCODE: $000000E4 VOL: 0
+;PCODE: $000000E5 VOL: 0
+; 0000 00E0 		// keys
+; 0000 00E1 		if ( PINB.1 == 0 && btn_set == 0 ) // on key down
+;PCODE: $000000E6 VOL: 0
+;PCODE: $000000E7 VOL: 0
+;PCODE: $000000E8 VOL: 0
+;PCODE: $000000E9 VOL: 0
+;PCODE: $000000EA VOL: 0
+;PCODE: $000000EB VOL: 0
+;PCODE: $000000EC VOL: 0
+;PCODE: $000000ED VOL: 0
+;PCODE: $000000EE VOL: 0
+;PCODE: $000000EF VOL: 0
+;PCODE: $000000F0 VOL: 0
+; 0000 00E2 		{
+; 0000 00E3 			btn_set = 1;
+;PCODE: $000000F1 VOL: 0
+;PCODE: $000000F2 VOL: 0
+; 0000 00E4 			if ( lcd_timer > 0 ) // if lcd is on
+;PCODE: $000000F3 VOL: 0
+;PCODE: $000000F4 VOL: 0
+;PCODE: $000000F5 VOL: 0
+; 0000 00E5 			{
+; 0000 00E6 				switch ( menu_state )
+;PCODE: $000000F6 VOL: 0
+; 0000 00E7 				{
+; 0000 00E8 					case 0:
+;PCODE: $000000F7 VOL: 0
+;PCODE: $000000F8 VOL: 0
+; 0000 00E9 						menu_state = 1;
+;PCODE: $000000F9 VOL: 0
+;PCODE: $000000FA VOL: 0
+; 0000 00EA 						break;
+;PCODE: $000000FB VOL: 0
+; 0000 00EB 					case 1:
+;PCODE: $000000FC VOL: 0
+;PCODE: $000000FD VOL: 0
+;PCODE: $000000FE VOL: 0
+; 0000 00EC 						tmp_val = on_value ;
+;PCODE: $000000FF VOL: 0
+;PCODE: $00000100 VOL: 0
+; 0000 00ED 						tmp_state = 1;
+;PCODE: $00000101 VOL: 0
+;PCODE: $00000102 VOL: 0
+; 0000 00EE 						menu_state = 4;
+;PCODE: $00000103 VOL: 0
+;PCODE: $00000104 VOL: 0
+; 0000 00EF 						break;
+;PCODE: $00000105 VOL: 0
+; 0000 00F0 					case 2:
+;PCODE: $00000106 VOL: 0
+;PCODE: $00000107 VOL: 0
+;PCODE: $00000108 VOL: 0
+; 0000 00F1 						tmp_val = off_value ;
+;PCODE: $00000109 VOL: 0
+;PCODE: $0000010A VOL: 0
+; 0000 00F2 						tmp_state = 2;
+;PCODE: $0000010B VOL: 0
+;PCODE: $0000010C VOL: 0
+; 0000 00F3 						menu_state = 4;
+;PCODE: $0000010D VOL: 0
+;PCODE: $0000010E VOL: 0
+; 0000 00F4 						break;
+;PCODE: $0000010F VOL: 0
+; 0000 00F5 					case 3:
+;PCODE: $00000110 VOL: 0
+;PCODE: $00000111 VOL: 0
+;PCODE: $00000112 VOL: 0
+; 0000 00F6 						tmp_val = timer_max ;
+;PCODE: $00000113 VOL: 0
+;PCODE: $00000114 VOL: 0
+; 0000 00F7 						tmp_state = 3;
+;PCODE: $00000115 VOL: 0
+;PCODE: $00000116 VOL: 0
+; 0000 00F8 						menu_state = 4;
+;PCODE: $00000117 VOL: 0
+;PCODE: $00000118 VOL: 0
+; 0000 00F9 						break;
+;PCODE: $00000119 VOL: 0
+; 0000 00FA 					case 4:
+;PCODE: $0000011A VOL: 0
+;PCODE: $0000011B VOL: 0
+;PCODE: $0000011C VOL: 0
+; 0000 00FB 						switch ( tmp_state )
+;PCODE: $0000011D VOL: 0
+; 0000 00FC 						{
+; 0000 00FD 							case 1:
+;PCODE: $0000011E VOL: 0
+;PCODE: $0000011F VOL: 0
+; 0000 00FE 								on_value = tmp_val;
+;PCODE: $00000120 VOL: 0
+;PCODE: $00000121 VOL: 0
+; 0000 00FF 								break;
+;PCODE: $00000122 VOL: 0
+; 0000 0100 							case 2:
+;PCODE: $00000123 VOL: 0
+;PCODE: $00000124 VOL: 0
+;PCODE: $00000125 VOL: 0
+; 0000 0101 								off_value = tmp_val;
+;PCODE: $00000126 VOL: 0
+;PCODE: $00000127 VOL: 0
+; 0000 0102 								break;
+;PCODE: $00000128 VOL: 0
+; 0000 0103 							case 3:
+;PCODE: $00000129 VOL: 0
+;PCODE: $0000012A VOL: 0
+;PCODE: $0000012B VOL: 0
+; 0000 0104 								timer_max = tmp_val;
+;PCODE: $0000012C VOL: 0
+;PCODE: $0000012D VOL: 0
+; 0000 0105 								break;
+;PCODE: $0000012E VOL: 0
+; 0000 0106 						}
+;PCODE: $0000012F VOL: 0
+; 0000 0107 						menu_state = 0;
+;PCODE: $00000130 VOL: 0
+;PCODE: $00000131 VOL: 0
+; 0000 0108 						break;
+;PCODE: $00000132 VOL: 0
+; 0000 0109 				}
+;PCODE: $00000133 VOL: 0
+; 0000 010A 			}
+; 0000 010B 			lcd_timer = 50;
+;PCODE: $00000134 VOL: 0
+;PCODE: $00000135 VOL: 0
+;PCODE: $00000136 VOL: 0
+; 0000 010C 		}
+; 0000 010D 		else if ( PINB.1 == 1 )
+;PCODE: $00000137 VOL: 0
+;PCODE: $00000138 VOL: 0
+;PCODE: $00000139 VOL: 0
+;PCODE: $0000013A VOL: 0
+;PCODE: $0000013B VOL: 0
+; 0000 010E 		{
+; 0000 010F 			btn_set = 0;
+;PCODE: $0000013C VOL: 0
+;PCODE: $0000013D VOL: 0
+; 0000 0110 		}
+; 0000 0111 		if ( PINB.2 == 0 && btn_next == 0 ) // on key down
+;PCODE: $0000013E VOL: 0
+;PCODE: $0000013F VOL: 0
+;PCODE: $00000140 VOL: 0
+;PCODE: $00000141 VOL: 0
+;PCODE: $00000142 VOL: 0
+;PCODE: $00000143 VOL: 0
+;PCODE: $00000144 VOL: 0
+;PCODE: $00000145 VOL: 0
+;PCODE: $00000146 VOL: 0
+;PCODE: $00000147 VOL: 0
+;PCODE: $00000148 VOL: 0
+;PCODE: $00000149 VOL: 0
+;PCODE: $0000014A VOL: 0
+; 0000 0112 		{
+; 0000 0113 			btn_next = 1;
+;PCODE: $0000014B VOL: 0
+;PCODE: $0000014C VOL: 0
+; 0000 0114 			if ( lcd_timer > 0 ) // if lcd is on
+;PCODE: $0000014D VOL: 0
+;PCODE: $0000014E VOL: 0
+;PCODE: $0000014F VOL: 0
+; 0000 0115 			{
+; 0000 0116 				switch ( menu_state )
+;PCODE: $00000150 VOL: 0
+; 0000 0117 				{
+; 0000 0118 					case 0:
+;PCODE: $00000151 VOL: 0
+;PCODE: $00000152 VOL: 0
+; 0000 0119 						break;
+;PCODE: $00000153 VOL: 0
+; 0000 011A 					case 1:
+;PCODE: $00000154 VOL: 0
+;PCODE: $00000155 VOL: 0
+;PCODE: $00000156 VOL: 0
+; 0000 011B 					case 2:
+;PCODE: $00000157 VOL: 0
+;PCODE: $00000158 VOL: 0
+;PCODE: $00000159 VOL: 0
+;PCODE: $0000015A VOL: 0
+;PCODE: $0000015B VOL: 0
+; 0000 011C 						menu_state ++;
+;PCODE: $0000015C VOL: 0
+;PCODE: $0000015D VOL: 0
+; 0000 011D 						break;
+;PCODE: $0000015E VOL: 0
+; 0000 011E 					case 3:
+;PCODE: $0000015F VOL: 0
+;PCODE: $00000160 VOL: 0
+;PCODE: $00000161 VOL: 0
+; 0000 011F 						menu_state = 1;
+;PCODE: $00000162 VOL: 0
+;PCODE: $00000163 VOL: 0
+; 0000 0120 						break;
+;PCODE: $00000164 VOL: 0
+; 0000 0121 					case 4:
+;PCODE: $00000165 VOL: 0
+;PCODE: $00000166 VOL: 0
+;PCODE: $00000167 VOL: 0
+; 0000 0122 						switch ( tmp_state )
+;PCODE: $00000168 VOL: 0
+; 0000 0123 						{
+; 0000 0124 							case 1:
+;PCODE: $00000169 VOL: 0
+;PCODE: $0000016A VOL: 0
+; 0000 0125 							case 2:
+;PCODE: $0000016B VOL: 0
+;PCODE: $0000016C VOL: 0
+;PCODE: $0000016D VOL: 0
+;PCODE: $0000016E VOL: 0
+;PCODE: $0000016F VOL: 0
+; 0000 0126 								tmp_val ++ ;
+;PCODE: $00000170 VOL: 0
+;PCODE: $00000171 VOL: 0
+;PCODE: $00000172 VOL: 0
+; 0000 0127 								break;
+;PCODE: $00000173 VOL: 0
+; 0000 0128 							case 3:
+;PCODE: $00000174 VOL: 0
+;PCODE: $00000175 VOL: 0
+;PCODE: $00000176 VOL: 0
+; 0000 0129 								if ( tmp_val >= 1200 )
+;PCODE: $00000177 VOL: 0
+;PCODE: $00000178 VOL: 0
+;PCODE: $00000179 VOL: 0
+; 0000 012A 								{
+; 0000 012B 									tmp_val += 600 ;
+;PCODE: $0000017A VOL: 0
+;PCODE: $0000017B VOL: 0
+;PCODE: $0000017C VOL: 0
+; 0000 012C 								}
+; 0000 012D 								else if ( tmp_val >= 600 )
+;PCODE: $0000017D VOL: 0
+;PCODE: $0000017E VOL: 0
+;PCODE: $0000017F VOL: 0
+;PCODE: $00000180 VOL: 0
+;PCODE: $00000181 VOL: 0
+; 0000 012E 								{
+; 0000 012F 									tmp_val += 250 ;
+;PCODE: $00000182 VOL: 0
+;PCODE: $00000183 VOL: 0
+;PCODE: $00000184 VOL: 0
+; 0000 0130 								}
+; 0000 0131 								else if ( tmp_val >= 300 )
+;PCODE: $00000185 VOL: 0
+;PCODE: $00000186 VOL: 0
+;PCODE: $00000187 VOL: 0
+;PCODE: $00000188 VOL: 0
+;PCODE: $00000189 VOL: 0
+; 0000 0132 								{
+; 0000 0133 									tmp_val += 100 ;
+;PCODE: $0000018A VOL: 0
+;PCODE: $0000018B VOL: 0
+;PCODE: $0000018C VOL: 0
+; 0000 0134 								}
+; 0000 0135 								else
+;PCODE: $0000018D VOL: 0
+;PCODE: $0000018E VOL: 0
+; 0000 0136 								{
+; 0000 0137 									tmp_val += 10 ;
+;PCODE: $0000018F VOL: 0
+;PCODE: $00000190 VOL: 0
+;PCODE: $00000191 VOL: 0
+; 0000 0138 								}
+;PCODE: $00000192 VOL: 0
+;PCODE: $00000193 VOL: 0
+;PCODE: $00000194 VOL: 0
+; 0000 0139 								break;
+;PCODE: $00000195 VOL: 0
+; 0000 013A 						}
+;PCODE: $00000196 VOL: 0
+; 0000 013B 						break;
+;PCODE: $00000197 VOL: 0
+; 0000 013C 				}
+;PCODE: $00000198 VOL: 0
+; 0000 013D 			}
+; 0000 013E 			lcd_timer = 50;
+;PCODE: $00000199 VOL: 0
+;PCODE: $0000019A VOL: 0
+;PCODE: $0000019B VOL: 0
+; 0000 013F 		}
+; 0000 0140 		else if ( PINB.2 == 1 )
+;PCODE: $0000019C VOL: 0
+;PCODE: $0000019D VOL: 0
+;PCODE: $0000019E VOL: 0
+;PCODE: $0000019F VOL: 0
+;PCODE: $000001A0 VOL: 0
+; 0000 0141 		{
+; 0000 0142 			btn_next = 0;
+;PCODE: $000001A1 VOL: 0
+;PCODE: $000001A2 VOL: 0
+; 0000 0143 		}
+; 0000 0144 		if ( PINB.3 == 0 && btn_prev == 0 ) // on key down
+;PCODE: $000001A3 VOL: 0
+;PCODE: $000001A4 VOL: 0
+;PCODE: $000001A5 VOL: 0
+;PCODE: $000001A6 VOL: 0
+;PCODE: $000001A7 VOL: 0
+;PCODE: $000001A8 VOL: 0
+;PCODE: $000001A9 VOL: 0
+;PCODE: $000001AA VOL: 0
+;PCODE: $000001AB VOL: 0
+;PCODE: $000001AC VOL: 0
+;PCODE: $000001AD VOL: 0
+;PCODE: $000001AE VOL: 0
+;PCODE: $000001AF VOL: 0
+; 0000 0145 		{
+; 0000 0146 			btn_prev = 1;
+;PCODE: $000001B0 VOL: 0
+;PCODE: $000001B1 VOL: 0
+; 0000 0147 			if ( lcd_timer > 0 ) // if lcd is on
+;PCODE: $000001B2 VOL: 0
+;PCODE: $000001B3 VOL: 0
+;PCODE: $000001B4 VOL: 0
+; 0000 0148 			{
+; 0000 0149 				switch ( menu_state )
+;PCODE: $000001B5 VOL: 0
+; 0000 014A 				{
+; 0000 014B 					case 0:
+;PCODE: $000001B6 VOL: 0
+;PCODE: $000001B7 VOL: 0
+; 0000 014C 						break;
+;PCODE: $000001B8 VOL: 0
+; 0000 014D 					case 1:
+;PCODE: $000001B9 VOL: 0
+;PCODE: $000001BA VOL: 0
+;PCODE: $000001BB VOL: 0
+; 0000 014E 						menu_state = 3;
+;PCODE: $000001BC VOL: 0
+;PCODE: $000001BD VOL: 0
+; 0000 014F 						break;
+;PCODE: $000001BE VOL: 0
+; 0000 0150 					case 2:
+;PCODE: $000001BF VOL: 0
+;PCODE: $000001C0 VOL: 0
+;PCODE: $000001C1 VOL: 0
+; 0000 0151 					case 3:
+;PCODE: $000001C2 VOL: 0
+;PCODE: $000001C3 VOL: 0
+;PCODE: $000001C4 VOL: 0
+;PCODE: $000001C5 VOL: 0
+;PCODE: $000001C6 VOL: 0
+; 0000 0152 						menu_state --;
+;PCODE: $000001C7 VOL: 0
+;PCODE: $000001C8 VOL: 0
+; 0000 0153 						break;
+;PCODE: $000001C9 VOL: 0
+; 0000 0154 					case 4:
+;PCODE: $000001CA VOL: 0
+;PCODE: $000001CB VOL: 0
+;PCODE: $000001CC VOL: 0
+; 0000 0155 						switch ( tmp_state )
+;PCODE: $000001CD VOL: 0
+; 0000 0156 						{
+; 0000 0157 							case 1:
+;PCODE: $000001CE VOL: 0
+;PCODE: $000001CF VOL: 0
+; 0000 0158 							case 2:
+;PCODE: $000001D0 VOL: 0
+;PCODE: $000001D1 VOL: 0
+;PCODE: $000001D2 VOL: 0
+;PCODE: $000001D3 VOL: 0
+;PCODE: $000001D4 VOL: 0
+; 0000 0159 								tmp_val -- ;
+;PCODE: $000001D5 VOL: 0
+;PCODE: $000001D6 VOL: 0
+;PCODE: $000001D7 VOL: 0
+; 0000 015A 								break;
+;PCODE: $000001D8 VOL: 0
+; 0000 015B 							case 3:
+;PCODE: $000001D9 VOL: 0
+;PCODE: $000001DA VOL: 0
+;PCODE: $000001DB VOL: 0
+; 0000 015C 								if ( tmp_val >= 1800 )
+;PCODE: $000001DC VOL: 0
+;PCODE: $000001DD VOL: 0
+;PCODE: $000001DE VOL: 0
+; 0000 015D 								{
+; 0000 015E 									tmp_val -= 600 ;
+;PCODE: $000001DF VOL: 0
+;PCODE: $000001E0 VOL: 0
+;PCODE: $000001E1 VOL: 0
+; 0000 015F 								}
+; 0000 0160 								else if ( tmp_val >= 850 )
+;PCODE: $000001E2 VOL: 0
+;PCODE: $000001E3 VOL: 0
+;PCODE: $000001E4 VOL: 0
+;PCODE: $000001E5 VOL: 0
+;PCODE: $000001E6 VOL: 0
+; 0000 0161 								{
+; 0000 0162 									tmp_val -= 250 ;
+;PCODE: $000001E7 VOL: 0
+;PCODE: $000001E8 VOL: 0
+;PCODE: $000001E9 VOL: 0
+; 0000 0163 								}
+; 0000 0164 								else if ( tmp_val >= 400 )
+;PCODE: $000001EA VOL: 0
+;PCODE: $000001EB VOL: 0
+;PCODE: $000001EC VOL: 0
+;PCODE: $000001ED VOL: 0
+;PCODE: $000001EE VOL: 0
+; 0000 0165 								{
+; 0000 0166 									tmp_val -= 100 ;
+;PCODE: $000001EF VOL: 0
+;PCODE: $000001F0 VOL: 0
+;PCODE: $000001F1 VOL: 0
+; 0000 0167 								}
+; 0000 0168 								else
+;PCODE: $000001F2 VOL: 0
+;PCODE: $000001F3 VOL: 0
+; 0000 0169 								{
+; 0000 016A 									tmp_val -= 10 ;
+;PCODE: $000001F4 VOL: 0
+;PCODE: $000001F5 VOL: 0
+;PCODE: $000001F6 VOL: 0
+; 0000 016B 								}
+;PCODE: $000001F7 VOL: 0
+;PCODE: $000001F8 VOL: 0
+;PCODE: $000001F9 VOL: 0
+; 0000 016C 								break;
+;PCODE: $000001FA VOL: 0
+; 0000 016D 						}
+;PCODE: $000001FB VOL: 0
+; 0000 016E 						break;
+;PCODE: $000001FC VOL: 0
+; 0000 016F 				}
+;PCODE: $000001FD VOL: 0
+; 0000 0170 			}
+; 0000 0171 			lcd_timer = 50;
+;PCODE: $000001FE VOL: 0
+;PCODE: $000001FF VOL: 0
+;PCODE: $00000200 VOL: 0
+; 0000 0172 		}
+; 0000 0173 		else if ( PINB.3 == 1 )
+;PCODE: $00000201 VOL: 0
+;PCODE: $00000202 VOL: 0
+;PCODE: $00000203 VOL: 0
+;PCODE: $00000204 VOL: 0
+;PCODE: $00000205 VOL: 0
+; 0000 0174 		{
+; 0000 0175 			btn_prev = 0;
+;PCODE: $00000206 VOL: 0
+;PCODE: $00000207 VOL: 0
+; 0000 0176 		}
+; 0000 0177 
+; 0000 0178 		// update values
+; 0000 0179 		if ( lcd_timer > 0 )
+;PCODE: $00000208 VOL: 0
+;PCODE: $00000209 VOL: 0
+;PCODE: $0000020A VOL: 0
+;PCODE: $0000020B VOL: 0
+;PCODE: $0000020C VOL: 0
+; 0000 017A 		{
+; 0000 017B 			PORTB.6 = 1;
+;PCODE: $0000020D VOL: 0
+;PCODE: $0000020E VOL: 0
+; 0000 017C 			lcd_timer -- ;
+;PCODE: $0000020F VOL: 0
+;PCODE: $00000210 VOL: 0
+;PCODE: $00000211 VOL: 0
+; 0000 017D 		}
+; 0000 017E 		else
+;PCODE: $00000212 VOL: 0
+;PCODE: $00000213 VOL: 0
+; 0000 017F 		{
+; 0000 0180 			PORTB.6 = 0;
+;PCODE: $00000214 VOL: 0
+;PCODE: $00000215 VOL: 0
+; 0000 0181             menu_state = 0;
+;PCODE: $00000216 VOL: 0
+;PCODE: $00000217 VOL: 0
+; 0000 0182 		}
+;PCODE: $00000218 VOL: 0
+; 0000 0183 
+; 0000 0184 		value = (int)read_adc(5);
+;PCODE: $00000219 VOL: 0
+;PCODE: $0000021A VOL: 0
+;PCODE: $0000021B VOL: 0
+;PCODE: $0000021C VOL: 0
+; 0000 0185 		if ( value >= on_value && state == 0 || value <= off_value && state == 1 )
+;PCODE: $0000021D VOL: 0
+;PCODE: $0000021E VOL: 0
+;PCODE: $0000021F VOL: 0
+;PCODE: $00000220 VOL: 0
+;PCODE: $00000221 VOL: 0
+;PCODE: $00000222 VOL: 0
+;PCODE: $00000223 VOL: 0
+;PCODE: $00000224 VOL: 0
+;PCODE: $00000225 VOL: 0
+;PCODE: $00000226 VOL: 0
+;PCODE: $00000227 VOL: 0
+;PCODE: $00000228 VOL: 0
+;PCODE: $00000229 VOL: 0
+;PCODE: $0000022A VOL: 0
+;PCODE: $0000022B VOL: 0
+;PCODE: $0000022C VOL: 0
+;PCODE: $0000022D VOL: 0
+; 0000 0186 		{
+; 0000 0187 			timer ++ ;
+;PCODE: $0000022E VOL: 0
+;PCODE: $0000022F VOL: 0
+;PCODE: $00000230 VOL: 0
+; 0000 0188 		}
+; 0000 0189 		else
+;PCODE: $00000231 VOL: 0
+;PCODE: $00000232 VOL: 0
+; 0000 018A 		{
+; 0000 018B 			timer = 0;
+;PCODE: $00000233 VOL: 0
+;PCODE: $00000234 VOL: 0
+; 0000 018C 		}
+;PCODE: $00000235 VOL: 0
+; 0000 018D 
+; 0000 018E 		if ( timer > timer_max )
+;PCODE: $00000236 VOL: 0
+;PCODE: $00000237 VOL: 0
+;PCODE: $00000238 VOL: 0
+;PCODE: $00000239 VOL: 0
+; 0000 018F 		{
+; 0000 0190 			if ( value >= on_value )
+;PCODE: $0000023A VOL: 0
+;PCODE: $0000023B VOL: 0
+;PCODE: $0000023C VOL: 0
+; 0000 0191 			{
+; 0000 0192 				state = 1 ;
+;PCODE: $0000023D VOL: 0
+;PCODE: $0000023E VOL: 0
+; 0000 0193 			}
+; 0000 0194 			else if ( value <= off_value )
+;PCODE: $0000023F VOL: 0
+;PCODE: $00000240 VOL: 0
+;PCODE: $00000241 VOL: 0
+;PCODE: $00000242 VOL: 0
+;PCODE: $00000243 VOL: 0
+; 0000 0195 			{
+; 0000 0196 				state = 0 ;
+;PCODE: $00000244 VOL: 0
+;PCODE: $00000245 VOL: 0
+; 0000 0197 			}
+; 0000 0198 		}
+;PCODE: $00000246 VOL: 0
+;PCODE: $00000247 VOL: 0
+; 0000 0199 
+; 0000 019A 		PORTB.5 = state ;
+;PCODE: $00000248 VOL: 0
+;PCODE: $00000249 VOL: 0
+;PCODE: $0000024A VOL: 0
+;PCODE: $0000024B VOL: 0
+;PCODE: $0000024C VOL: 0
+;PCODE: $0000024D VOL: 0
+;PCODE: $0000024E VOL: 0
+;PCODE: $0000024F VOL: 0
+;PCODE: $00000250 VOL: 0
+;PCODE: $00000251 VOL: 0
+; 0000 019B 
+; 0000 019C 		delay_ms(10);
+;PCODE: $00000252 VOL: 0
+;PCODE: $00000253 VOL: 0
+;PCODE: $00000254 VOL: 0
+; 0000 019D 	}
+;PCODE: $00000255 VOL: 0
+;PCODE: $00000256 VOL: 0
+; 0000 019E }
+;PCODE: $00000257 VOL: 0
+;PCODE: $00000258 VOL: 0
+;PCODE: $00000259 VOL: 0
+;PCODE: $0000025A VOL: 0

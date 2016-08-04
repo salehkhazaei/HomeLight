@@ -1,0 +1,34 @@
+0:
+??:??:?? ON/OFF
+OFF/ON AT ??:??
+
+1:
+SET TIME 
+
+2:
+SET OFF TIME 
+
+3:
+SET ON TIME 
+
+4:
+DO ON
+
+5:
+DO OFF
+
+6:
+SET LED TIMEOUT
+
+7:
+?0:00
+0?:00
+00:?0
+00:0?
+
+8:
+?
+
+9:
+OFF
+ON
